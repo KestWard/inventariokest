@@ -181,4 +181,5 @@ Las pruebas cubren la lógica PEPS (reparto entre lotes, lotes vencidos, decimal
 
 ## 📄 Licencia
 
-Proyecto de uso académico y educativo. Define aquí la licencia que prefieras.
+Proyecto de uso académico 
+KestWard 
