@@ -1,0 +1,23 @@
+PREVALIDACION MYSQL: asadero_h3_p18_final_20261113 PRODUCTO: 5 STOCK: 5 LOTES: 1 MOVIMIENTOS: 0 CLAVES: 0
+ARCHIVO API: C:\Users\KestWard\Desktop\inventariokest\backend\src\server.js
+SERVIDOR INICIADO PID: 12668
+SERVIDOR TEMPORAL: 3018 BASE IMPUESTA: asadero_h3_p18_final_20261113
+H3 REGISTRO: 403 {"error":"El registro publico de cuentas esta deshabilitado."}
+H3 SIN TOKEN: 401 {"error":"Sesion invalida o expirada."}
+H3 ROL ENCARGADO: 403 {"error":"Acceso exclusivo del administrador."}
+H3 OK | registro 403 | sin token 401 | encargado 403
+ADMIN P18 LOGIN HTTP: 200
+API PRODUCTOS HTTP: 200
+PREVALIDACION API: PRODUCTO: 5 STOCK: 5
+API PRODUCTOS: [{"id":3,"nombre":"Adobo","unidad":"kg","consumo_diario":1,"dias_entrega":3,"stock_minimo":1,"stock":0},{"id":2,"nombre":"Papa","unidad":"kg","consumo_diario":20,"dias_entrega":2,"stock_minimo":8,"stock":0},{"id":1,"nombre":"Pollo crudo","unidad":"kg","consumo_diario":30,"dias_entrega":1,"stock_minimo":10,"stock":0},{"id":5,"nombre":"Producto Ensayo P18","unidad":"kg","consumo_diario":1,"dias_entrega":1,"stock_minimo":1,"stock":5},{"id":4,"nombre":"Salsas","unidad":"lt","consumo_diario":3,"dias_entrega":3,"stock_minimo":2,"stock":0}]
+PREVALIDACION APROBADA.
+P18 CASO 1 HTTP: 200 200
+CASO 1/4 OK | reenvio 200/200 | stock 5 a 4 | 1 movimiento
+P18 CASO 2 HTTP: 200
+CASO 2/4 OK | nueva salida 200 | stock 4 a 3
+P18 CASO 3 HTTP: 409
+CASO 3/4 OK | clave reutilizada 409 | stock 3
+P18 CASO 4 HTTP: 200 200
+CASO 4/4 OK | simultaneas 200/200 | stock 3 a 2
+RESULTADO FINAL: 4/4 OK | stock 5 a 2 | 3 movimientos | 3 claves
+SERVIDOR TEMPORAL 3018: DETENIDO

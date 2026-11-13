@@ -6,7 +6,8 @@
   "scripts": {
     "test": "node --test",
     "start": "node src/server.js",
-    "crear-usuario": "node src/crear-usuario.js"
+    "crear-usuario": "node src/crear-usuario.js",
+    "seed-demo": "node src/seed-demo.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

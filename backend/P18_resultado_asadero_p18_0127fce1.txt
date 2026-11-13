@@ -1,0 +1,8 @@
+P18 - DOS SOLICITUDES IDENTICAS
+Base de ensayo: asadero_p18_0127fce1
+Primera respuesta HTTP: 200
+Segunda respuesta HTTP: 200
+Saldo inicial: 5
+Saldo final: 3.00
+Movimientos de salida: 2
+Resultado: HALLAZGO: DUPLICACION CONFIRMADA

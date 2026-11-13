@@ -1,4 +1,26 @@
-node_modules/
+# Dependencias y productos de compilacion
+**/node_modules/
+**/dist/
+**/coverage/
+
+# Credenciales y configuracion privada
 .env
-dist/
+**/.env
+**/.env.*
+!**/.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Archivos locales, respaldos y temporales
 *.log
+.DS_Store
+.vscode/
+.idea/
+**/respaldo*/
+**/backup*/
+*.zip
+*.7z
+*.rar
+*.sql.gz

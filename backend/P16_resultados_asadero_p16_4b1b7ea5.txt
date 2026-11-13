@@ -1,0 +1,11 @@
+P16 - ROLLBACK REAL Y COMMIT EN MYSQL
+Base independiente: asadero_p16_4b1b7ea5
+Estado inicial: 5 unidades, 0 salidas
+HTTP con fallo provocado: 500
+Despues de ROLLBACK: saldo 5, movimientos 0
+Clave fallida persistida: 0
+ROLLBACK: VERIFICADO
+HTTP salida normal posterior: 200
+Despues de COMMIT: saldo 4, movimientos 1
+COMMIT: VERIFICADO
+RESULTADO FINAL P16: 2/2 CORRECTAS

@@ -1,185 +1,84 @@
-<div align="center">
+# Inventario Asaderos — Prototipo académico
 
-# 🍗 Inventario Asaderos
+Prototipo web de inventario por lotes para insumos perecederos, desarrollado como monografía de Ingeniería de Software con un asadero de Soacha, Cundinamarca, como caso de referencia. **La evaluación corresponde a pruebas técnicas locales y bases aisladas; no se reporta despliegue productivo, prueba piloto en el establecimiento ni reducción real de desperdicio.**
 
-**Sistema web de control de inventario para asaderos de Soacha, con rotación PEPS, alertas de vencimiento y sugerencias de compra.**
+**Documento académico:** [Monografía – revisión editorial 9 (Word)](documentacion/Monografia_Inventario_Asaderos_Revision9_Cierre_Editorial_2026.docx).
 
-![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)
-![Vite](https://img.shields.io/badge/Vite-5-646CFF?style=for-the-badge&logo=vite&logoColor=white)
-![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
-![Express](https://img.shields.io/badge/Express-5-000000?style=for-the-badge&logo=express&logoColor=white)
-![MySQL](https://img.shields.io/badge/MySQL-8-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
-![JWT](https://img.shields.io/badge/JWT-Auth-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
+## Funcionalidades implementadas
 
-</div>
+- Catálogo de productos y parámetros de reposición.
+- Entradas de compras por lote con proveedor, fecha de vencimiento, cantidad y costo unitario.
+- Salidas con rotación **FEFO** (*first expired, first out*, primero en vencer, primero en salir), con transacciones para conservar la consistencia. El archivo de implementación conserva el nombre histórico `peps.js`.
+- Bloqueo de uso de lotes vencidos; los lotes que vencen hoy aún se consideran vigentes.
+- Alertas por vencimiento, stock utilizable y sugerencias de reposición.
+- Consulta de movimientos y presentación de reportes en la interfaz.
+- Sesión JWT y acceso exclusivo al módulo de inventario para el rol `admin` en la versión evaluada. El registro público `/api/auth/register` devuelve HTTP 403.
+- **Idempotencia de salidas:** una misma operación repetida con la misma cabecera `Idempotency-Key` no genera un nuevo descuento; reutilizar la clave con otra carga genera conflicto.
 
----
+## Alcance y limitaciones
 
-## 📖 Descripción
+- Los vencidos **se excluyen del stock utilizable**, pero **no existe operación implementada para registrar su descarte físico**. La pantalla de merma no acredita una medición real del desperdicio.
+- Las entradas no cuentan con el mismo control de idempotencia que las salidas.
+- Las claves de idempotencia son globales; no se implementaron relación foránea con usuarios ni limpieza/caducidad automática.
+- El esquema contiene el rol `encargado` por compatibilidad histórica, pero este rol no está autorizado a utilizar la API de inventario en la versión evaluada.
+- No se han probado operaciones en producción ni efectos económicos en el establecimiento.
 
-Inventario Asaderos es una aplicación web que ayuda a los asaderos a controlar sus existencias de insumos perecederos como pollo, papa, adobo y salsas. Reduce el desperdicio y evita quedarse sin producto.
+## Tecnologías
 
-El sistema registra cada compra como un lote con su fecha de vencimiento y descuenta las salidas con el criterio **PEPS** (primero en expirar, primero en salir). Siempre se usa primero el lote más próximo a vencer, y los lotes vencidos nunca se descuentan. Cada operación queda registrada con el usuario que la realizó, lo que da trazabilidad completa del inventario.
+Frontend: React, Vite y JavaScript/JSX. Backend: Node.js, Express, MySQL 8, `mysql2`, JWT, `bcryptjs`. Pruebas unitarias con `node --test`.
 
-## ✨ Funcionalidades principales
+## Estructura
 
-- 📦 **Gestión de lotes y entradas:** registro de compras con proveedor, cantidad, costo unitario y fecha de vencimiento.
-- 🔄 **Salidas con rotación PEPS:** el descuento se reparte automáticamente entre lotes, dentro de una transacción que evita inconsistencias cuando hay operaciones simultáneas.
-- ⏰ **Alertas de vencimiento:** aviso de los lotes que vencen en los próximos dos días.
-- 🛒 **Sugerencias de compra:** cálculo del punto de reorden a partir del consumo diario, el tiempo de entrega del proveedor y el stock mínimo, con la cantidad recomendada a comprar.
-- 🗂️ **Catálogo de productos:** alta de productos con sus parámetros de reposición.
-- 📊 **Reportes de movimientos:** historial de entradas y salidas de los últimos 30 días, con exportación a CSV e impresión en PDF.
-- 🔐 **Autenticación segura:** inicio de sesión con JWT y contraseñas cifradas con bcrypt.
-
-## 🛠️ Stack tecnológico
-
-### Frontend
-
-<p>
-  <img src="https://skillicons.dev/icons?i=react,vite,js,html,css" alt="Frontend" />
-</p>
-
-| Tecnología | Uso |
-|---|---|
-| **React 18** | Interfaz de usuario (SPA) |
-| **Vite 5** | Servidor de desarrollo y empaquetado |
-| **JavaScript (JSX)** | Lenguaje de los componentes |
-| **HTML5 / CSS3** | Estructura y estilos |
-
-### Backend
-
-<p>
-  <img src="https://skillicons.dev/icons?i=nodejs,express,js" alt="Backend" />
-</p>
-
-| Tecnología | Uso |
-|---|---|
-| **Node.js** | Entorno de ejecución |
-| **Express 5** | API REST |
-| **mysql2** | Conexión a MySQL con consultas parametrizadas |
-| **jsonwebtoken** | Sesiones con JWT |
-| **bcryptjs** | Cifrado de contraseñas |
-| **dotenv** | Variables de entorno |
-| **cors** | Comunicación entre frontend y backend |
-
-### Base de datos
-
-<p>
-  <img src="https://skillicons.dev/icons?i=mysql" alt="Base de datos" />
-</p>
-
-MySQL 8 con llaves foráneas, restricciones `CHECK` e índices para la consulta PEPS.
-
-### Herramientas
-
-<p>
-  <img src="https://skillicons.dev/icons?i=git,github,npm,vscode" alt="Herramientas" />
-</p>
-
-Pruebas unitarias con el ejecutor nativo de Node.js (`node --test`).
-
-## 🏗️ Arquitectura
-
-```
+```text
 inventariokest/
-├── backend/
-│   ├── src/
-│   │   ├── server.js          # API REST y autenticación
-│   │   ├── peps.js            # Lógica de negocio (funciones puras)
-│   │   └── crear-usuario.js   # Script de creación de usuarios
-│   ├── test/                  # Pruebas unitarias de la lógica PEPS
-│   └── schema.sql             # Esquema y datos semilla
-└── frontend/                  # Interfaz React (SPA)
+  backend/
+    src/                 API, lógica de lotes y utilidad de cuentas
+    test/                pruebas unitarias
+    schema.sql           esquema inicial y datos de ejemplo
+    sql/01_solicitud_idempotente.sql
+    P16*.js / P17*.js / P18*.js / P20*.js  ensayos de integración (si están incluidos)
+    P18_H3_PRUEBA_AISLADA_AUTOMATICA.js   regresión H3/P18
+  frontend/              interfaz de usuario
+  docs/                  reproducibilidad y resultados
+  documentacion/         monografía final
+  README.md
 ```
 
-La lógica de negocio está separada de la base de datos, por lo que se prueba sin necesidad de MySQL.
+## Instalación local básica
 
-## 📋 Requisitos previos
-
-- [Node.js](https://nodejs.org/) 18 o superior
-- [MySQL](https://dev.mysql.com/downloads/) 8 (el esquema usa la collation `utf8mb4_0900_ai_ci`, que no existe en MariaDB)
-
-## 🚀 Instalación
-
-### 1. Clonar el repositorio
+**Requisitos:** Node.js compatible (entorno de prueba Node.js 22), MySQL 8 y npm. Crear una base de **ensayo**, nunca importar el esquema sobre registros que deban conservarse.
 
 ```bash
-git clone <URL-DEL-REPOSITORIO>
+git clone https://github.com/KestWard/inventariokest.git
 cd inventariokest
-```
-
-### 2. Base de datos
-
-```bash
 mysql -u root -p < backend/schema.sql
-```
-
-Esto crea la base `asadero_inventario`, sus tablas y algunos productos y proveedores de ejemplo, editables desde la aplicación.
-
-### 3. Backend
-
-```bash
+mysql -u root -p < backend/sql/01_solicitud_idempotente.sql
 cd backend
-npm install
-```
-
-Crea un archivo `backend/.env` con el siguiente contenido (ajusta los valores):
-
-```env
-DB_HOST=localhost
-DB_USER=root
-DB_PASS=tu_clave_de_mysql
-DB_NAME=asadero_inventario
-JWT_SECRET=una_clave_larga_y_aleatoria
-PORT=3000
-```
-
-Crea el primer usuario administrador e inicia el servidor:
-
-```bash
-npm run crear-usuario -- "Nombre Apellido" correo@ejemplo.com clave_segura admin
+npm ci
+cp .env.example .env
+# Configurar backend/.env SOLO en el equipo local: claves y secreto JWT propios.
+npm test
 npm start
 ```
-
-La API quedará disponible en `http://localhost:3000`.
-
-### 4. Frontend
 
 En otra terminal:
 
 ```bash
 cd frontend
-npm install
+npm ci
+npm run build
 npm run dev
 ```
 
-Abre la dirección que muestra Vite (normalmente `http://localhost:5173`). El frontend redirige las llamadas `/api` al backend en el puerto 3000.
+Abrir la URL indicada por Vite (habitualmente `http://localhost:5173`). La API local utiliza normalmente `http://localhost:3000`. Se requiere una cuenta `admin` de ensayo para iniciar sesión; se puede crear mediante la utilidad `backend/src/crear-usuario.js`, utilizando credenciales propias y sin publicar contraseñas.
 
-## 🧪 Pruebas
+## Pruebas y reproducibilidad
 
-```bash
-cd backend
-npm test
-```
+- Backend: `cd backend && npm test` (11 pruebas unitarias aprobadas en la evaluación documentada).
+- Frontend: `cd frontend && npm run build`.
+- Las pruebas de integración de P16, P17, P18 y P20 requieren bases MySQL de ensayo y preparación específica. **No ejecutar scripts sobre la base de trabajo** ni repetir P18 sobre una base que haya quedado con movimientos de una ejecución anterior.
+- La verificación H3/P18 más reciente (13/11/2026) obtuvo 403 para registro, 401 sin token, 403 con rol `encargado`, 200 en login admin y 4/4 escenarios de idempotencia en base aislada. Resultados y condiciones: [documentación de reproducibilidad](docs/REPRODUCIBILIDAD.md).
 
-Las pruebas cubren la lógica PEPS (reparto entre lotes, lotes vencidos, decimales), las validaciones de entrada, el punto de reorden y el manejo de transacciones con rollback.
+## Naturaleza del proyecto
 
-## 👥 Usuarios y roles
-
-| Rol | Cómo se crea |
-|---|---|
-| `admin` | Con el script `npm run crear-usuario` |
-| `encargado` | Con el script o desde la pantalla de registro de la aplicación |
-
-## 📐 Reglas de negocio
-
-- **PEPS:** las salidas descuentan primero el lote que vence antes; ante igual fecha, el más antiguo.
-- **Lote vencido:** un lote que vence hoy aún es utilizable; desde el día siguiente se excluye de las salidas y del stock vigente.
-- **Punto de reorden:** `consumo diario × días de entrega + stock mínimo`.
-- **Cantidad sugerida de compra:** `punto de reorden + 2 días de consumo − stock vigente` (mínimo 0).
-- **Alerta de vencimiento:** lotes con stock que vencen en 2 días o menos.
-
-## 📄 Licencia
-
-Proyecto de uso académico 
-KestWard 
+Código publicado exclusivamente con fines académicos. No representa una solución operativa implantada en el establecimiento.
