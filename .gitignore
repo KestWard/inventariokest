@@ -24,3 +24,6 @@
 *.7z
 *.rar
 *.sql.gz
+
+/documentacion/
+/docs/
