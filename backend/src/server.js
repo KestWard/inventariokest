@@ -10,7 +10,9 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const mysql = require('mysql2/promise');
 const P = require('./peps');
+const { crearLimitador } = require('./limite-intentos');
 const D = require('./demanda');
+const R = require('./resumen');
 
 if (!process.env.JWT_SECRET) {
   throw new Error('Falta JWT_SECRET en .env');
@@ -31,9 +33,24 @@ app.use(express.json());
 
 const hoy = () => P.aISO(new Date());
 
+const limiteLogin = crearLimitador({
+  maxPorCuenta: Number(process.env.LOGIN_MAX_INTENTOS) || 5,
+  ventanaMs: (Number(process.env.LOGIN_VENTANA_MIN) || 15) * 60 * 1000
+});
+
 // Solo el administrador puede iniciar sesion.
 app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body ?? {};
+
+  // Límite de intentos fallidos por cuenta e IP.
+  const espera = limiteLogin.segundosBloqueo(req.ip, email);
+
+  if (espera > 0) {
+    res.set('Retry-After', String(espera));
+    return res.status(429).json({
+      error: `Demasiados intentos fallidos. Intente de nuevo en ${Math.ceil(espera / 60)} minuto(s).`
+    });
+  }
 
   const [[u]] = await pool.query(
     'SELECT id, nombre, rol, password_hash FROM usuario WHERE email = ? AND activo = 1',
@@ -48,15 +65,19 @@ app.post('/api/auth/login', async (req, res) => {
       u.password_hash
     ))
   ) {
+    limiteLogin.registrarFallo(req.ip, email);
+
     return res.status(401).json({
       error: 'Correo o clave incorrectos.'
     });
   }
 
+  limiteLogin.registrarExito(req.ip, email);
+
   const token = jwt.sign(
     { id: u.id, rol: u.rol },
     process.env.JWT_SECRET,
-    { expiresIn: '12h' }
+    { expiresIn: process.env.JWT_EXPIRA || '2h' }
   );
 
   res.json({
@@ -245,6 +266,32 @@ app.get('/api/demanda', async (req, res) => {
     promedio_diario: d.promedio_diario,
     por_dia_semana: d.por_dia_semana
   })));
+});
+
+// Resumen en lenguaje natural del inventario (reglas, sin servicios externos).
+app.get('/api/resumen', async (req, res) => {
+  const h = hoy();
+  const filas = await evaluarProductos();
+
+  const [lotes] = await pool.query(
+    `SELECT l.id, l.cantidad_actual, l.costo_unitario, l.fecha_vencimiento,
+            p.nombre AS producto, p.unidad
+       FROM lote l
+       JOIN producto p ON p.id = l.producto_id
+      WHERE l.cantidad_actual > 0`
+  );
+
+  const [movimientos] = await pool.query(
+    `SELECT m.tipo, p.nombre AS producto, p.unidad,
+            SUM(m.cantidad) AS cantidad, COUNT(*) AS n
+       FROM movimiento m
+       JOIN producto p ON p.id = m.producto_id
+      WHERE m.fecha >= ? AND m.fecha < ?
+      GROUP BY m.tipo, p.nombre, p.unidad`,
+    [D.sumarDias(h, -6), D.sumarDias(h, 1)]
+  );
+
+  res.json(R.construirResumen({ fecha: h, filas, lotes, movimientos }));
 });
 
 // Consultar alertas.

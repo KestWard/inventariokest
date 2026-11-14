@@ -75,6 +75,15 @@ CREATE TABLE IF NOT EXISTS alerta (
   CONSTRAINT fk_alerta_lote     FOREIGN KEY (lote_id)     REFERENCES lote(id)
 ) ENGINE=InnoDB;
 
+-- Claves de idempotencia para las salidas FEFO (antes estaba en sql/01_solicitud_idempotente.sql).
+CREATE TABLE IF NOT EXISTS solicitud_idempotente (
+  clave VARCHAR(64) NOT NULL PRIMARY KEY,
+  usuario_id INT NOT NULL,
+  huella CHAR(64) NOT NULL,
+  respuesta JSON NULL,
+  creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
 -- Datos semilla: valores de EJEMPLO, editables desde la pantalla de productos.
 INSERT INTO proveedor (nombre, telefono) VALUES
   ('Proveedor Avícola (ejemplo)', NULL),

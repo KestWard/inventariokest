@@ -51,8 +51,7 @@ inventariokest/
 ```bash
 git clone https://github.com/KestWard/inventariokest.git
 cd inventariokest
-mysql -u root -p < backend/schema.sql
-mysql -u root -p < backend/sql/01_solicitud_idempotente.sql
+mysql -u root -p < backend/schema.sql   # incluye la tabla de idempotencia
 cd backend
 npm ci
 cp .env.example .env
@@ -78,6 +77,15 @@ Abrir la URL indicada por Vite (habitualmente `http://localhost:5173`). La API l
 - Frontend: `cd frontend && npm run build`.
 - Las pruebas de integración de P16, P17, P18 y P20 requieren bases MySQL de ensayo y preparación específica. **No ejecutar scripts sobre la base de trabajo** ni repetir P18 sobre una base que haya quedado con movimientos de una ejecución anterior.
 - La verificación H3/P18 más reciente (13/11/2026) obtuvo 403 para registro, 401 sin token, 403 con rol `encargado`, 200 en login admin y 4/4 escenarios de idempotencia en base aislada. Resultados y condiciones: [documentación de reproducibilidad](docs/REPRODUCIBILIDAD.md).
+
+## Extensiones posteriores a la versión evaluada
+
+Esta versión incluye funciones y ajustes **que no formaron parte de la evaluación documentada en la monografía**; las pruebas P16, P17, P18, P20 y P21 deben repetirse sobre ella (y registrar la versión con `node identificar-version.js`) antes de citarla como versión probada.
+
+- **Demanda estimada:** promedio móvil de 4 semanas con estacionalidad semanal (`backend/src/demanda.js`, ruta `/api/demanda`, panel en el Inicio). `node src/seed-historial.js` carga un historial **simulado** solo para demostrarla.
+- **Resumen del inventario:** texto generado por reglas, sin servicios externos (`backend/src/resumen.js`, ruta `/api/resumen`).
+- **Seguridad del inicio de sesión:** límite de intentos fallidos (429), JWT de 2 h (`JWT_EXPIRA`), política de contraseña (`backend/src/politica-clave.js`, `cambiar-clave.js`) y tabla `solicitud_idempotente` incluida en `schema.sql`. `backend/sql/02_desactivar_cuentas_residuales.sql` desactiva cuentas de ensayo con rol `encargado`.
+- **Verificación:** `backend/P22_matriz_autorizacion.js` comprueba la autorización de cada ruta y el límite de intentos contra un servidor en marcha.
 
 ## Naturaleza del proyecto
 

@@ -3,11 +3,17 @@
 require('dotenv').config({ quiet: true });
 const bcrypt = require('bcryptjs');
 const mysql = require('mysql2/promise');
+const { validarClave } = require('./politica-clave');
 
 (async () => {
   const [nombre, email, clave, rol] = process.argv.slice(2);
   if (!nombre || !email || !clave || !['admin', 'encargado'].includes(rol)) {
     console.error('Uso: node src/crear-usuario.js "Nombre" correo@x.com clave admin|encargado');
+    process.exit(1);
+  }
+  const errores = validarClave(clave, { email });
+  if (errores.length) {
+    console.error('Clave rechazada: ' + errores.join(' '));
     process.exit(1);
   }
   const conn = await mysql.createConnection({

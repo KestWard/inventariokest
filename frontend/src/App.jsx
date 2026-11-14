@@ -95,6 +95,91 @@ const ETIQUETA_METODO = {
 const ORDEN_DIAS = [1, 2, 3, 4, 5, 6, 0];
 const NOMBRE_DIAS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 
+function ResumenInventario() {
+  const [res, setRes] = useState(null);
+  const [err, setErr] = useState("");
+  const [copiado, setCopiado] = useState(false);
+
+  const generar = () => {
+    setErr("");
+    api("/resumen").then(setRes).catch(x => setErr(x.message));
+  };
+
+  useEffect(generar, []);
+
+  const copiar = async () => {
+    try {
+      await navigator.clipboard.writeText(res.texto);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    } catch {
+      setErr("No se pudo copiar el resumen.");
+    }
+  };
+
+  return (
+    <section className="panel resumen-panel">
+      <div className="panel-heading">
+        <div>
+          <h2>Resumen del inventario</h2>
+          <p className="muted">
+            Generado con reglas del sistema a partir de existencias,
+            vencimientos, demanda estimada y movimientos recientes.
+          </p>
+        </div>
+        <div className="report-actions">
+          <button className="secondary-action" onClick={generar}>
+            Actualizar resumen
+          </button>
+          <button
+            className="secondary-action"
+            onClick={copiar}
+            disabled={!res}
+          >
+            {copiado ? "Copiado" : "Copiar texto"}
+          </button>
+        </div>
+      </div>
+
+      {err && <p className="err">{err}</p>}
+      {!res && !err && <p className="empty-state">Generando resumen...</p>}
+
+      {res && (
+        <>
+          <p className="resumen-titular">{res.titular}</p>
+
+          <div className="resumen-indicadores">
+            {res.indicadores.map(i => (
+              <article key={i.etiqueta} className="stat-card">
+                <span className="stat-label">{i.etiqueta}</span>
+                <strong>{i.valor}</strong>
+                <span className="stat-detail">{i.detalle}</span>
+              </article>
+            ))}
+          </div>
+
+          <ul className="resumen-lista">
+            {res.puntos.map((p, i) => (
+              <li key={i} className={"resumen-punto resumen-" + p.nivel}>
+                <span className="resumen-cabecera">
+                  <em className="resumen-etiqueta">{p.etiqueta}</em>
+                  <strong>{p.titulo}</strong>
+                </span>
+                <span>{p.detalle}</span>
+              </li>
+            ))}
+          </ul>
+
+          <p className="muted resumen-pie">
+            Datos al {res.fecha}. El pronóstico usa las salidas de las
+            últimas 4 semanas y es una estimación, no una garantía.
+          </p>
+        </>
+      )}
+    </section>
+  );
+}
+
 function Dashboard() {
   const [prods, setProds] = useState([]);
   const [dem, setDem] = useState([]);
@@ -130,6 +215,8 @@ function Dashboard() {
           Actualizar datos
         </button>
       </header>
+
+      <ResumenInventario />
 
       <section className="stats-grid">
         <article className="stat-card">
