@@ -1,0 +1,52 @@
+P20 - RESULTADO FINAL
+Fecha UTC: 2026-11-14T12:50:04.623Z
+Commit de referencia: bce9b968e4c9c532230ab54381d5eb3f0a55ec06
+Node.js: v22.23.4
+Plataforma: win32/x64
+MySQL: 8.0.46
+SHA256 backend/src/server.js: 16184b5d419a111deeb5af75f56aa4612e11b7651e0f6cb29311daafb217a680
+SHA256 script P20 local: d211bfdc2a70d045edc089e748953c07a0a26990bcc50cac0713d1ae530b35cb
+Base de ensayo: asadero_p20_68a135e6
+Entradas exitosas: 30/30
+Salidas exitosas: 30/30
+Entrada promedio: 5.73 ms
+Entrada P95: 10.28 ms
+Entrada minima: 4.18 ms
+Entrada maxima: 12.45 ms
+Salida promedio: 6.17 ms
+Salida P95: 7.87 ms
+Salida minima: 4.73 ms
+Salida maxima: 11.46 ms
+ESTADO: EJECUCION SATISFACTORIA
+
+Repeticion;Entrada_ms;Salida_ms;Saldo_final
+1;12.45;11.46;4
+2;8.04;7.87;4
+3;5.32;6.86;4
+4;7.92;6.51;4
+5;7.14;6.45;4
+6;6.46;6.24;4
+7;4.93;5.65;4
+8;4.73;5.40;4
+9;4.18;5.16;4
+10;5.07;5.12;4
+11;4.40;5.04;4
+12;4.57;4.73;4
+13;4.62;5.44;4
+14;4.83;6.12;4
+15;10.28;7.32;4
+16;5.41;7.67;4
+17;6.33;7.40;4
+18;5.07;5.98;4
+19;4.95;5.92;4
+20;4.98;5.14;4
+21;4.94;5.35;4
+22;4.54;5.90;4
+23;4.93;6.81;4
+24;5.87;6.37;4
+25;5.63;5.61;4
+26;5.30;6.40;4
+27;4.66;5.41;4
+28;5.28;5.57;4
+29;4.44;5.06;4
+30;4.60;5.09;4

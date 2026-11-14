@@ -5,9 +5,16 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const net = require('node:net');
-const { spawn } = require('node:child_process');
+const { spawn, execFileSync } = require('node:child_process');
 const mysql = require('mysql2/promise');
 
+// Cargar la configuración local sin mostrar credenciales.
+require('dotenv').config({
+  path: path.join(__dirname, '.env'),
+  quiet: true
+});
+
+// Nombre aleatorio para una base de datos de ensayo.
 const BASE = 'asadero_p16_' +
   crypto.randomBytes(4).toString('hex');
 
@@ -22,7 +29,7 @@ async function principal() {
   try {
 
     // 1. CONECTAR A MYSQL
-    // Se crea una base independiente del inventario real.
+    // La prueba utiliza una base independiente.
 
     db = await mysql.createConnection({
       host: process.env.DB_HOST || 'localhost',
@@ -30,6 +37,18 @@ async function principal() {
       password: process.env.DB_PASS || '',
       multipleStatements: true
     });
+
+    // Impedir que se reutilice una base existente.
+    const [[yaExiste]] = await db.query(
+      'SELECT COUNT(*) AS total FROM information_schema.schemata WHERE schema_name = ?',
+      [BASE]
+    );
+
+    if (Number(yaExiste.total) !== 0) {
+      throw new Error(
+        'La base temporal ya existe; se cancela el ensayo.'
+      );
+    }
 
     const sql = fs.readFileSync(
       path.join(__dirname, 'schema.sql'),
@@ -42,10 +61,12 @@ async function principal() {
       );
     }
 
+    // Crear las tablas en la base temporal.
     await db.query(
       sql.replace(/asadero_inventario/g, BASE)
     );
 
+    // Confirmar que la conexión apunta a la base aislada.
     const [[actual]] = await db.query(
       'SELECT DATABASE() AS nombre'
     );
@@ -139,7 +160,7 @@ async function principal() {
       );
     }
 
-    // 4. FUNCION PARA ENVIAR SOLICITUDES
+    // 4. FUNCIÓN PARA ENVIAR SOLICITUDES
 
     async function enviar(
       ruta,
@@ -181,7 +202,9 @@ async function principal() {
       };
     }
 
-    // 5. CREAR USUARIO DE ENSAYO
+    // 5. CREAR ADMINISTRADOR DE ENSAYO
+    // No se utiliza el registro público.
+    // La cuenta se crea únicamente en la base aislada.
 
     const codigo = crypto
       .randomBytes(5)
@@ -190,25 +213,47 @@ async function principal() {
     const correo =
       `p16-${codigo}@example.invalid`;
 
-    const password = crypto
-      .randomBytes(16)
-      .toString('hex');
+    const password =
+      'P16-Aa9!' +
+      crypto.randomBytes(16).toString('hex');
 
-    const registro = await enviar(
-      '/api/auth/register',
-      {
-        nombre: 'Ensayo rollback P16',
-        email: correo,
-        password
-      }
-    );
+    try {
+      execFileSync(
+        process.execPath,
+        [
+          'src/crear-usuario.js',
+          'Ensayo rollback P16',
+          correo,
+          password,
+          'admin'
+        ],
+        {
+          cwd: __dirname,
+          env: {
+            ...process.env,
+            DB_NAME: BASE
+          },
+          stdio: ['ignore', 'pipe', 'pipe'],
+          timeout: 15000
+        }
+      );
+    } catch (error) {
+      const detalle = error.stderr
+        ? String(error.stderr).trim()
+        : error.message;
 
-    if (registro.estado !== 201) {
       throw new Error(
-        'Registro de prueba: ' +
-        JSON.stringify(registro)
+        'No se pudo crear el administrador de ensayo: ' +
+        detalle
       );
     }
+
+    console.log(
+      'Administrador temporal creado en base de ensayo: ' +
+      BASE
+    );
+
+    // AUTENTICAR ADMINISTRADOR
 
     const login = await enviar(
       '/api/auth/login',
@@ -315,8 +360,8 @@ async function principal() {
     }
 
     // 9. PROVOCAR UN ERROR CONTROLADO
-    // El trigger solo se crea en la base de ensayo.
-    // Hace fallar el INSERT del movimiento.
+    // El trigger se crea solo en la base aislada.
+    // Esto permite verificar ROLLBACK.
 
     await db.query(`
       CREATE TRIGGER p16_fallo_controlado
@@ -342,7 +387,7 @@ async function principal() {
       claveFallida
     );
 
-    // 10. VERIFICAR EL ROLLBACK
+    // 10. VERIFICAR ROLLBACK
 
     const trasFallo = await estado();
 
@@ -368,6 +413,7 @@ async function principal() {
     triggerCreado = false;
 
     // 12. REGISTRAR UNA SALIDA NORMAL
+    // Esto permite verificar COMMIT.
 
     const correcta = await enviar(
       '/api/salidas',
@@ -387,36 +433,92 @@ async function principal() {
       final.saldo === 4 &&
       final.movimientos === 1;
 
-    // 13. PREPARAR RESUMEN DE RESULTADOS
+    // 13. REGISTRAR VERSIÓN Y ENTORNO
+
+    let commit = 'NO DISPONIBLE';
+
+    try {
+      commit = execFileSync(
+        'git',
+        ['rev-parse', 'HEAD'],
+        {
+          cwd: path.resolve(__dirname, '..'),
+          encoding: 'utf8',
+          timeout: 5000,
+          stdio: ['ignore', 'pipe', 'ignore']
+        }
+      ).trim();
+    } catch {}
+
+    const [[mysqlVersion]] = await db.query(
+      'SELECT VERSION() AS version'
+    );
+
+    const hashServidor = crypto
+      .createHash('sha256')
+      .update(
+        fs.readFileSync(
+          path.join(__dirname, 'src/server.js')
+        )
+      )
+      .digest('hex');
+
+    // 14. PREPARAR RESUMEN DE RESULTADOS
 
     const resumen = [
+      'Fecha de ejecucion (UTC): ' +
+        new Date().toISOString(),
+
+      'Commit de referencia: ' + commit,
+
+      'Node.js: ' + process.version,
+
+      'Plataforma: ' +
+        process.platform + ' / ' + process.arch,
+
+      'MySQL: ' + mysqlVersion.version,
+
+      'SHA256 backend/src/server.js: ' + hashServidor,
+
       'P16 - ROLLBACK REAL Y COMMIT EN MYSQL',
+
       'Base independiente: ' + BASE,
+
       'Estado inicial: 5 unidades, 0 salidas',
+
       'HTTP con fallo provocado: ' + fallida.estado,
+
       'Despues de ROLLBACK: saldo ' +
         trasFallo.saldo +
         ', movimientos ' + trasFallo.movimientos,
+
       'Clave fallida persistida: ' +
         Number(marca.total),
+
       'ROLLBACK: ' +
         (rollbackCorrecto ? 'VERIFICADO' : 'REVISAR'),
+
       'HTTP salida normal posterior: ' +
         correcta.estado,
+
       'Despues de COMMIT: saldo ' +
         final.saldo +
         ', movimientos ' + final.movimientos,
+
       'COMMIT: ' +
         (commitCorrecto ? 'VERIFICADO' : 'REVISAR'),
+
       'RESULTADO FINAL P16: ' +
-        (rollbackCorrecto && commitCorrecto
-          ? '2/2 CORRECTAS'
-          : 'REVISAR')
+        (
+          rollbackCorrecto && commitCorrecto
+            ? '2/2 CORRECTAS'
+            : 'REVISAR'
+        )
     ].join('\n');
 
     console.log('\n' + resumen);
 
-    // 14. GUARDAR EVIDENCIA
+    // 15. GUARDAR EVIDENCIA
 
     const archivo = path.join(
       __dirname,
@@ -439,7 +541,7 @@ async function principal() {
 
   } finally {
 
-    // 15. LIMPIAR TRIGGER Y CERRAR SERVIDOR
+    // 16. LIMPIAR TRIGGER Y CERRAR SERVIDOR
 
     if (triggerCreado && db) {
       try {

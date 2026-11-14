@@ -1,0 +1,19 @@
+P21 - SEGURIDAD DE AUTENTICACION Y AUTORIZACION
+Fecha UTC: 2026-11-14T13:16:34.037Z
+Commit de referencia: bce9b968e4c9c532230ab54381d5eb3f0a55ec06
+Node.js: v22.23.4
+Plataforma: win32/x64
+MySQL: 8.0.46
+SHA256 backend/src/server.js: 16184b5d419a111deeb5af75f56aa4612e11b7651e0f6cb29311daafb217a680
+SHA256 script P21 local: 7571106c9a4c1601d6916115b4ffa900a679d8e4ff08d52a9336be266352d3aa
+Base aislada: asadero_p21_49212d5c
+P21-01 Sin token: HTTP 401; esperado 401; CORRECTO
+P21-02 Token invalido: HTTP 401; esperado 401; CORRECTO
+P21-03 Token expirado: HTTP 401; esperado 401; CORRECTO
+Acceso rol encargado: HTTP 403; esperado 403; CORRECTO
+Login administrador: HTTP 200; esperado 200; CORRECTO
+Consulta administrador: HTTP 200; esperado 200; CORRECTO
+Registro publico bloqueado: HTTP 403; esperado 403; CORRECTO
+RESULTADO FINAL P21: 3/3 CORRECTAS
+CONTROLES COMPLEMENTARIOS: 4/4 CORRECTOS
+ESTADO: VERIFICADO

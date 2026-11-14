@@ -1,0 +1,17 @@
+Fecha de ejecucion (UTC): 2026-11-14T11:54:57.484Z
+Commit de referencia: bce9b968e4c9c532230ab54381d5eb3f0a55ec06
+Node.js: v22.23.4
+Plataforma: win32 / x64
+MySQL: 8.0.46
+SHA256 backend/src/server.js: 16184b5d419a111deeb5af75f56aa4612e11b7651e0f6cb29311daafb217a680
+P16 - ROLLBACK REAL Y COMMIT EN MYSQL
+Base independiente: asadero_p16_8f7bc0ee
+Estado inicial: 5 unidades, 0 salidas
+HTTP con fallo provocado: 500
+Despues de ROLLBACK: saldo 5, movimientos 0
+Clave fallida persistida: 0
+ROLLBACK: VERIFICADO
+HTTP salida normal posterior: 200
+Despues de COMMIT: saldo 4, movimientos 1
+COMMIT: VERIFICADO
+RESULTADO FINAL P16: 2/2 CORRECTAS
