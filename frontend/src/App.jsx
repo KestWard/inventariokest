@@ -87,8 +87,17 @@ function Login({ onOk }) {
   );
 }
 
+const ETIQUETA_METODO = {
+  estacional: "modelo por día de la semana",
+  promedio_movil: "promedio móvil",
+  manual: "consumo manual"
+};
+const ORDEN_DIAS = [1, 2, 3, 4, 5, 6, 0];
+const NOMBRE_DIAS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+
 function Dashboard() {
   const [prods, setProds] = useState([]);
+  const [dem, setDem] = useState([]);
   const [al, setAl] = useState({
     vencimientos: [],
     reposicion: []
@@ -97,6 +106,7 @@ function Dashboard() {
   const cargar = () => {
     api("/productos").then(setProds);
     api("/alertas").then(setAl);
+    api("/demanda").then(setDem);
   };
 
   useEffect(cargar, []);
@@ -193,6 +203,48 @@ function Dashboard() {
         </div>
       </section>
 
+      <section className="panel">
+        <div className="panel-heading">
+          <div>
+            <h2>Demanda estimada por día de la semana</h2>
+            <p className="muted">
+              Calculada con las salidas reales de las últimas 4 semanas
+              (promedio móvil con estacionalidad semanal).
+            </p>
+          </div>
+        </div>
+
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>Método</th>
+                {ORDEN_DIAS.map(d => (
+                  <th key={d}>{NOMBRE_DIAS[d]}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {dem.map(d => (
+                <tr key={d.producto_id}>
+                  <td><strong>{d.producto}</strong></td>
+                  <td>
+                    {ETIQUETA_METODO[d.metodo] || d.metodo}
+                    {" "}({d.ventana_dias} d)
+                  </td>
+                  {ORDEN_DIAS.map(i => (
+                    <td key={i}>
+                      {d.por_dia_semana[i]} {d.unidad}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       <div className="alert-grid">
         <section className="panel alert-panel">
           <div className="panel-heading">
@@ -239,7 +291,10 @@ function Dashboard() {
             al.reposicion.map(r => (
               <p key={r.producto_id} className="alert-item">
                 <strong>{r.producto}</strong>
-                <span>Stock actual: {r.stock}</span>
+                <span>
+                  Stock: {r.stock} · consumo estimado {r.consumo_estimado}/día
+                  ({ETIQUETA_METODO[r.metodo] || r.metodo})
+                </span>
                 <b>Comprar {r.sugerido}</b>
               </p>
             ))

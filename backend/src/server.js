@@ -10,6 +10,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const mysql = require('mysql2/promise');
 const P = require('./peps');
+const D = require('./demanda');
 
 if (!process.env.JWT_SECRET) {
   throw new Error('Falta JWT_SECRET en .env');
@@ -188,6 +189,64 @@ app.get('/api/proveedores', async (req, res) => {
   res.json(rows);
 });
 
+// Demanda estimada con las salidas reales (promedio móvil + estacionalidad semanal).
+async function evaluarProductos() {
+  const h = hoy();
+  const desde = D.sumarDias(h, -D.VENTANA_DIAS);
+  const productos = await productosConStock();
+
+  const [ventas] = await pool.query(
+    `SELECT producto_id, DATE(fecha) AS fecha, SUM(cantidad) AS cantidad
+       FROM movimiento
+      WHERE tipo = 'S' AND fecha >= ? AND fecha < ?
+      GROUP BY producto_id, DATE(fecha)`,
+    [desde, h]
+  );
+
+  const [primeros] = await pool.query(
+    `SELECT producto_id, MIN(DATE(fecha)) AS primero
+       FROM movimiento
+      GROUP BY producto_id`
+  );
+
+  const primeroDe = Object.fromEntries(
+    primeros.map(r => [r.producto_id, r.primero])
+  );
+
+  return productos.map(p => {
+    const prediccion = D.prediccionDemanda(
+      ventas.filter(v => v.producto_id === p.id),
+      h,
+      {
+        consumo_manual: p.consumo_diario,
+        desde_registro: primeroDe[p.id] || null
+      }
+    );
+
+    return {
+      producto: p,
+      prediccion,
+      reposicion: D.evaluarReposicion(p, p.stock, prediccion, h)
+    };
+  });
+}
+
+// Consultar la demanda estimada por producto y día de la semana.
+app.get('/api/demanda', async (req, res) => {
+  const filas = await evaluarProductos();
+
+  res.json(filas.map(({ producto: p, prediccion: d }) => ({
+    producto_id: p.id,
+    producto: p.nombre,
+    unidad: p.unidad,
+    consumo_manual: p.consumo_diario,
+    metodo: d.metodo,
+    ventana_dias: d.ventana_dias,
+    promedio_diario: d.promedio_diario,
+    por_dia_semana: d.por_dia_semana
+  })));
+});
+
 // Consultar alertas.
 app.get('/api/alertas', async (req, res) => {
   const h = hoy();
@@ -207,13 +266,17 @@ app.get('/api/alertas', async (req, res) => {
       dias: P.diasEntre(h, l.fecha_vencimiento)
     }));
 
-  const reposicion = (await productosConStock())
-    .filter(p => P.requiereReposicion(p, p.stock))
-    .map(p => ({
+  const reposicion = (await evaluarProductos())
+    .filter(f => f.reposicion.requiere)
+    .map(({ producto: p, reposicion: r }) => ({
       producto_id: p.id,
       producto: p.nombre,
       stock: p.stock,
-      sugerido: P.cantidadSugerida(p, p.stock)
+      sugerido: r.sugerido,
+      consumo_estimado: r.consumo_estimado,
+      metodo: r.metodo,
+      demanda_entrega: r.demanda_entrega,
+      punto_reorden: r.punto_reorden
     }));
 
   res.json({
