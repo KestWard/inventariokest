@@ -343,21 +343,25 @@ function Dashboard() {
             </div>
           </div>
 
-          {al.vencimientos.length === 0 ? (
-            <p className="empty-state">
-              No hay lotes por vencer.
-            </p>
-          ) : (
-            al.vencimientos.map(v => (
-              <p key={v.id} className="alert-item">
-                <strong>{v.producto}</strong>
-                <span>
-                  Lote {v.id} · {v.cantidad_actual} unidades
-                </span>
-                <b>{v.dias} día(s)</b>
-              </p>
-            ))
-          )}
+          
+{al.vencimientos.filter(v => Number(v.dias) >= 0).length === 0 ? (
+  <p className="empty-state">
+    No hay lotes por vencer.
+  </p>
+) : (
+  al.vencimientos
+    .filter(v => Number(v.dias) >= 0)
+    .map(v => (
+      <p key={v.id} className="alert-item">
+        <strong>{v.producto}</strong>
+        <span>
+          Lote {v.id} · {v.cantidad_actual} unidades
+        </span>
+        <b>{v.dias} día(s)</b>
+      </p>
+    ))
+)}
+
         </section>
 
         <section className="panel alert-panel">
